@@ -33,6 +33,7 @@ namespace QLNet
        Nossa Sra. Aparecida Day, October 12th
        All Souls Day, November 2nd
        Republic Day, November 15th
+       Black Consciousness Day, November 20th (since 2007, except 2022 and 2023)
        Christmas, December 25th
        Passion of Christ
        Carnival
@@ -66,7 +67,9 @@ namespace QLNet
       public enum Market
       {
          Settlement, // generic settlement calendar
-         Exchange    // BOVESPA calendar
+         Exchange,   // BOVESPA calendar
+         Banking     // FEBRABAN calendar (Brazilian Banking Federation)
+
       }
 
       public Brazil() : this(Market.Settlement) { }
@@ -80,6 +83,9 @@ namespace QLNet
                break;
             case Market.Exchange:
                _impl  = ExchangeImpl.Singleton;
+               break;
+            case Market.Banking:
+               _impl = BankingImpl.Singleton;
                break;
             default:
                Utils.QL_FAIL("unknown market");
@@ -117,6 +123,8 @@ namespace QLNet
                 || (d == 2 && m == Month.November)
                 // Republic Day
                 || (d == 15 && m == Month.November)
+                // Black Consciousness Day, November 20th (since 2007, except 2022 and 2023)
+                || (d == 20 && m == Month.November && y >= 2007 && y != 2022 && y != 2023)
                 // Christmas
                 || (d == 25 && m == Month.December)
                 // Passion of Christ
@@ -183,6 +191,56 @@ namespace QLNet
             return true;
          }
       }
+
+
+      private class BankingImpl : WesternImpl
+      {
+         private BankingImpl() { }
+         public static readonly BankingImpl Singleton = new();
+         public override string name() { return "FEBRABAN"; }
+         public override bool isBusinessDay(Date date)
+         {
+            var w = date.DayOfWeek;
+            var d = date.Day;
+            var m = (Month)date.Month;
+            var y = date.Year;
+            var dd = date.DayOfYear;
+            var em = easterMonday(y);
+
+            if (isWeekend(w)
+                // New Year's Day
+                || (d == 1 && m == Month.January)
+                // Tiradentes Day
+                || (d == 21 && m == Month.April)
+                // Labor Day
+                || (d == 1 && m == Month.May)
+                // Revolution Day
+                || (d == 9 && m == Month.July && y < 2022)
+                // Independence Day
+                || (d == 7 && m == Month.September)
+                // Nossa Sra. Aparecida Day
+                || (d == 12 && m == Month.October)
+                // All Souls Day
+                || (d == 2 && m == Month.November)
+                // Republic Day
+                || (d == 15 && m == Month.November)
+                // Black Consciousness Day
+                || (d == 20 && m == Month.November && y >= 2007 && y != 2022 && y != 2023)
+                // Christmas
+                || (d == 25 && m == Month.December)
+                // Passion of Christ
+                || (dd == em - 3)
+                // Carnival
+                || (dd == em - 49 || dd == em - 48)
+                // Corpus Christi
+                || (dd == em + 59)
+               )
+               return false;
+            return true;
+         }
+      }
+
+
 
    }
 }
